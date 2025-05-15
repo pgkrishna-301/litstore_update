@@ -27,6 +27,12 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+</IfModule>
+
 # Fix OPTIONS requests for CORS preflight
 <If "%{REQUEST_METHOD} == 'OPTIONS'">
     Header always set Access-Control-Allow-Origin "*"
