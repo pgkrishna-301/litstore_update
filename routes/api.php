@@ -24,6 +24,7 @@ use App\Http\Controllers\SportLightController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\SizeController;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -34,21 +35,21 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout']);
 Route::get('/users', [AuthController::class, 'getAllUsers']);
 
+Route::get('profile-image/{filename}', function ($filename) {
+    $path = storage_path('app/public/uploads/' . $filename); // Adjust path if needed
 
-// Route::get('profile-image/{filename}', function ($filename) {
-//     $path = storage_path('app/public/category_images/' . $filename);  // Adjust the path if needed
+    if (!file_exists($path)) {
+        return response()->json(['error' => 'Image not found'], 404);
+    }
 
-//     if (!file_exists($path)) {
-//         abort(404);
-//     }
+    return response()->make(file_get_contents($path), 200, [
+        'Content-Type' => mime_content_type($path),
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+    ]);
+});
 
-//     return response()->make(file_get_contents($path), 200, [
-//         'Content-Type' => mime_content_type($path),
-//         'Access-Control-Allow-Origin' => '*',
-//         'Access-Control-Allow-Methods' => 'GET, OPTIONS',
-//         'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
-//     ]);
-// });
 
 
 
@@ -108,14 +109,53 @@ Route::get('/shipping/get/{user_id}', [ShippingController::class, 'show']);
  // Order APIflutter build web
 
 
- Route::post('/order-details', [OrderDetailController::class, 'store']);
- Route::get('/order-details/get', [OrderDetailController::class, 'getAll']);
+Route::post('/order-details', [OrderDetailController::class, 'store']);
+
+// Get all orders
+Route::get('/order-details/get', [OrderDetailController::class, 'getAll']);
+
+// Serve banner images
+
+
+Route::get('/banner-image/{filename}', function ($filename) {
+    $path = storage_path('app/public/uploads/' . $filename);
+
+    if (!file_exists($path)) {
+        return response()->json(['error' => 'Image not found'], 404);
+    }
+
+    return response()->file($path, [
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+    ]);
+});
+
+
+// Serve color images
+Route::get('/color-image/{filename}', function ($filename) {
+    $path = storage_path('app/public/uploads/' . $filename);
+    if (!file_exists($path)) {
+        return response()->json(['error' => 'Image not found'], 404);
+    }
+
+    return response()->file($path, [
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+    ]);
+});
+
+Route::get('/get/order/{order_id}', [OrderDetailController::class, 'getOrderByOrderId']);
+
+
+
  Route::put('order-details/{id}', [OrderDetailController::class, 'update']);
  Route::get('/order-details/get/{id}', [OrderDetailController::class, 'getById']);
  Route::get('order-details/user/{userId}', [OrderDetailController::class, 'getByUserId']);
  Route::post('/store-order', [ProductOrderController::class, 'store']);
  Route::put('/order/update/{order_id}', [OrderDetailController::class, 'updateorderId']);
- Route::get('/get/order/{order_id}', [OrderDetailController::class, 'getOrderByOrderId']);
+ 
  Route::post('/update-order/{customer_id}', [OrderDetailController::class, 'updateOrderByCustomerId']);
  Route::delete('/orders/{order_id}', [OrderDetailController::class, 'destroy']);
  Route::get('/orders/customer/{customer_id}', [OrderDetailController::class, 'getOrdersByCustomerId']);
@@ -220,6 +260,81 @@ Route::post('/add-vendors', [AddVendorController::class, 'store']);
 Route::get('/add-vendors/{id}', [AddVendorController::class, 'show']);
 Route::put('/add-vendors/{id}', [AddVendorController::class, 'update']);
 Route::delete('/add-vendors/{id}', [AddVendorController::class, 'destroy']);
+
+
+
+Route::post('/add-size', [SizeController::class, 'store']);
+Route::put('/update-size/{id}', [SizeController::class, 'update']);
+Route::get('/size/{id}', [SizeController::class, 'show']);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Route::get('/product-image/{filename}', function ($filename) {
+    $path = storage_path('app/public/uploads/' . $filename);
+
+    if (!file_exists($path)) {
+        return response()->json(['error' => 'Image not found'], 404);
+    }
+
+    return response()->file($path, [
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+    ]);
+});
+
+// Serve additional images
+Route::get('/product_add-image/{filename}', function ($filename) {
+    $path = storage_path('app/public/uploads/' . $filename);
+
+    if (!file_exists($path)) {
+        return response()->json(['error' => 'Image not found'], 404);
+    }
+
+    return response()->file($path, [
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+    ]);
+});
+
+Route::get('/productcolor-image/{filename}', function ($filename) {
+    $path = storage_path('app/public/uploads/' . $filename);
+
+    if (!file_exists($path)) {
+        return response()->json(['error' => 'Image not found'], 404);
+    }
+
+    return response()->file($path, [
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+    ]);
+});
+
+
+
+
+
+
+
+
+
 
 
 
