@@ -118,9 +118,7 @@ class OrderDetailController extends Controller
         ], 201);
     }
  
-    
-    
-    public function getOrderByOrderId($order_id)
+public function getOrderByOrderId($order_id) 
 {
     // Retrieve the order by order_id
     $order = OrderDetail::where('order_id', $order_id)->first();
@@ -130,6 +128,25 @@ class OrderDetailController extends Controller
             'success' => false,
             'message' => 'Order not found'
         ], 404);
+    }
+
+    // Decode products and add banner_image_url and color_image_url
+    $products = json_decode($order->products, true);
+
+    foreach ($products as &$product) {
+        if (!empty($product['banner_image'])) {
+            $filename = basename($product['banner_image']);
+            $product['banner_image_url'] = url("api/banner-image/{$filename}");
+        } else {
+            $product['banner_image_url'] = null;
+        }
+
+        if (!empty($product['color_image'])) {
+            $filename = basename($product['color_image']);
+            $product['color_image_url'] = url("api/color-image/{$filename}");
+        } else {
+            $product['color_image_url'] = null;
+        }
     }
 
     return response()->json([
@@ -152,11 +169,58 @@ class OrderDetailController extends Controller
             'email' => $order->email,
             'phone_number' => $order->phone_number,
             'shipping_address' => $order->shipping_address,
-            'products' => json_decode($order->products, true),
+            'products' => $products,
             'created_at' => $order->created_at,
             'delivery_date' => $order->delivery_date,
             'id' => $order->id
         ]
+    ], 200);
+}
+
+    
+
+ public function getAll(Request $request)
+{
+    // Fetch all orders
+    $orders = OrderDetail::all();
+
+    if ($orders->isEmpty()) {
+        return response()->json(['message' => 'No orders found'], 404);
+    }
+
+    // Process each order and append full URLs to image paths
+    $orders = $orders->map(function ($order) {
+        $decodedProducts = json_decode($order->products, true);
+
+        if (is_array($decodedProducts)) {
+            foreach ($decodedProducts as &$product) {
+                // Process banner image URL
+                if (!empty($product['banner_image']) && !str_starts_with($product['banner_image'], 'http')) {
+                    $filename = basename($product['banner_image']); // e.g., myphoto.png
+                    $product['banner_image_url'] = url('api/banner-image/' . $filename); // Generate full URL
+                } else {
+                    $product['banner_image_url'] = null;
+                }
+
+                // Process color image URL
+                if (!empty($product['color_image']) && !str_starts_with($product['color_image'], 'http')) {
+                    $filename = basename($product['color_image']); // e.g., colorphoto.png
+                    $product['color_image_url'] = url('api/color-image/' . $filename); // Generate full URL
+                } else {
+                    $product['color_image_url'] = null;
+                }
+            }
+        }
+
+        // Reassign the processed products with the new URLs
+        $order->products = $decodedProducts;
+        return $order;
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'All orders with full image URLs retrieved successfully.',
+        'data' => $orders,
     ], 200);
 }
 
@@ -427,16 +491,6 @@ public function getOrdersByCustomerId($customer_id)
     
     
 
-    public function getAll()
-    {
-        $orderDetails = OrderDetail::all();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order details retrieved successfully.',
-            'data' => $orderDetails,
-        ], 200);
-    }
 
     public function getById($id)
     {

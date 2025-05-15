@@ -131,29 +131,49 @@ public function addToCart(Request $request)
 }
 
 
-    public function index(Request $request, $userId)
-    {
-        // Fetch cart items filtered by user_id
-        $Purchases = Purchase::where('user_id', $userId)->get();
+  public function index(Request $request, $userId)
+{
+    // Fetch cart items filtered by user_id
+    $purchases = Purchase::where('user_id', $userId)->get();
 
-        if ($Purchases->isEmpty()) {
-            return response()->json([
-                'message' => 'No cart items found for the given user.',
-            ], 404);
+    if ($purchases->isEmpty()) {
+        return response()->json([
+            'message' => 'No cart items found for the given user.',
+        ], 404);
+    }
+
+    // Process each item
+    $purchases = $purchases->map(function ($item) {
+        // Compute final price with discount
+        $item->final_price = $item->mrp - ($item->mrp * ($item->discount ?? 0) / 100);
+
+        // Append full banner_image URL if file exists
+        if (!empty($item->banner_image) && !str_starts_with($item->banner_image, 'http')) {
+            $filename = basename($item->banner_image);
+            $item->banner_image_url = url('api/banner-image/' . $filename);
+        } else {
+            $item->banner_image_url = null;
         }
 
-        // Add additional data (e.g., computed discounts or related data)
-        $Purchases->map(function ($item) {
-            $item->final_price = $item->mrp - ($item->mrp * ($item->discount ?? 0) / 100);
-            return $item;
-        });
+        // Append full color_image URL if file exists
+        if (!empty($item->color_image) && !str_starts_with($item->color_image, 'http')) {
+            $filename = basename($item->color_image);
+            $item->color_image_url = url('api/color-image/' . $filename);
+        } else {
+            $item->color_image_url = null;
+        }
 
-        // Return the filtered data
-        return response()->json([
-            'message' => 'Cart items fetched successfully.',
-            'data' => $Purchases,
-        ], 200);
-    }
+        return $item;
+    });
+
+    // Return the filtered and formatted data
+    return response()->json([
+        'success' => true,
+        'message' => 'Cart items fetched successfully.',
+        'data' => $purchases,
+    ], 200);
+}
+
 
     public function show($id)
     {

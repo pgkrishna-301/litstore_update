@@ -231,21 +231,33 @@ public function login(Request $request)
         ], 200);
     }
     
-    public function getAllUsers(Request $request)
-    {
-        // Fetch all users
-        $users = DB::table('user')->get();
-    
-        if ($users->isEmpty()) {
-            return response()->json(['message' => 'No users found'], 404);
-        }
-    
-        // Return all user details as a JSON response
-        return response()->json([
-            'success' => true,
-            'data' => $users,
-        ], 200);
+public function getAllUsers(Request $request) 
+{
+    // Fetch all users
+    $users = DB::table('user')->get();
+
+    if ($users->isEmpty()) {
+        return response()->json(['message' => 'No users found'], 404);
     }
+
+    // Append full URL to profile_image path
+    $users = $users->map(function ($user) {
+        if ($user->profile_image) {
+            $filename = basename($user->profile_image); // e.g., myphoto.png
+            $user->profile_image_url = url('api/profile-image/' . $filename); // Must match route
+        } else {
+            $user->profile_image_url = null;
+        }
+        return $user;
+    });
+
+    return response()->json([
+        'success' => true,
+        'data' => $users,
+    ], 200);
+}
+
+
 
     public function updatearchitectHide(Request $request, $mobile_number)
 {

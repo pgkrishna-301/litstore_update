@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class CartItemController extends Controller
 {
-    public function store(Request $request)
+public function store(Request $request)
 {
     $validated = $request->validate([
         'product_id' => 'nullable|numeric',
@@ -32,24 +32,25 @@ class CartItemController extends Controller
         'location' => 'nullable|string',
     ]);
 
-    // Check for existing cart item with same product_id, size_name, and color_name
+    // ✅ Check if this combination already exists for the SAME customer
     $existing = CartItem::where('product_id', $validated['product_id'] ?? null)
         ->where('size_name', $validated['size_name'] ?? null)
         ->where('color_name', $validated['color_name'] ?? null)
+        ->where('customer_id', $validated['customer_id'] ?? null) // ✅ Added this line
         ->first();
 
     if ($existing) {
         return response()->json([
-            'message' => 'This item with the same product_id, size_name, and color_name already exists in the cart.'
+            'message' => 'This item already exists in this customer\'s cart.'
         ], 409); // 409 Conflict
     }
 
-    // Handle banner image
+    // ✅ Handle banner image
     if ($request->hasFile('banner_image')) {
         $validated['banner_image'] = $request->file('banner_image')->store('uploads', 'public');
     }
 
-    // Handle color image
+    // ✅ Handle color image
     if ($request->hasFile('color_image')) {
         $validated['color_image'] = $request->file('color_image')->store('uploads', 'public');
     }
@@ -61,6 +62,7 @@ class CartItemController extends Controller
         'data' => $cartItem
     ], 201);
 }
+
 
     
 

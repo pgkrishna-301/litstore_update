@@ -129,7 +129,7 @@ public function updateProduct(Request $request, $id)
             'banner_image' => 'image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $path = $request->file('banner_image')->store('uploads/banner_images', 'public');
+        $path = $request->file('banner_image')->store('uploads', 'public');
         $product->banner_image = $path;
 
         Log::info('Banner Image Uploaded:', ['path' => $path]);
@@ -232,33 +232,119 @@ if ($request->hasFile('add_image')) {
     
     
 
+public function getAllProducts()
+{
+    $products = Product::all();
 
-    public function getAllProducts()
-    {
-        $products = Product::all();
-
-        return response()->json([
-            'success' => true,
-            'data' => $products,
-        ], 200);
-    }
-
-    public function getProductById($id)
-    {
-        $product = Product::find($id);
-
-        if (!$product) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product not found.',
-            ], 404);
+    $products = $products->map(function ($product) {
+        // Handle banner image URL
+        if (!empty($product->banner_image)) {
+            $filename = basename($product->banner_image);
+            $product->banner_image_url = url('api/banner-image/' . $filename);
+        } else {
+            $product->banner_image_url = null;
         }
 
+        // Handle additional images
+        $addImages = [];
+        if (!empty($product->add_image)) {
+            $decodedImages = json_decode($product->add_image, true);
+            if (is_array($decodedImages)) {
+                foreach ($decodedImages as $img) {
+                    $addImages[] = url('api/product_add-image/' . basename($img));
+                }
+            }
+        }
+        $product->add_image_url = $addImages;
+
+        // Handle color images
+        $colorImages = [];
+        if (!empty($product->color_image)) {
+            $decodedColors = is_array($product->color_image)
+                ? $product->color_image
+                : json_decode($product->color_image, true);
+
+            if (is_array($decodedColors)) {
+                foreach ($decodedColors as $color) {
+                    if (!empty($color['image'])) {
+                        $color['image_url'] = url('api/product-image/' . basename($color['image']));
+                    } else {
+                        $color['image_url'] = null;
+                    }
+                    $colorImages[] = $color;
+                }
+            }
+        }
+        $product->color_image = $colorImages;
+
+        return $product;
+    });
+
+    return response()->json([
+        'success' => true,
+        'data' => $products,
+    ], 200);
+}
+
+
+
+
+   public function getProductById($id)
+{
+    $product = Product::find($id);
+
+    if (!$product) {
         return response()->json([
-            'success' => true,
-            'data' => $product,
-        ], 200);
+            'success' => false,
+            'message' => 'Product not found.',
+        ], 404);
     }
+
+    // Handle banner image URL
+    if (!empty($product->banner_image)) {
+        $filename = basename($product->banner_image);
+        $product->banner_image_url = url('api/product-image/' . $filename);
+    } else {
+        $product->banner_image_url = null;
+    }
+
+    // Handle additional images
+    $addImages = [];
+    if (!empty($product->add_image)) {
+        $decodedImages = json_decode($product->add_image, true);
+        if (is_array($decodedImages)) {
+            foreach ($decodedImages as $img) {
+                $addImages[] = url('api/product_add-image/' . basename($img));
+            }
+        }
+    }
+    $product->add_image_url = $addImages;
+
+    // Handle color images
+    $colorImages = [];
+    if (!empty($product->color_image)) {
+        $decodedColors = is_array($product->color_image)
+            ? $product->color_image
+            : json_decode($product->color_image, true);
+
+        if (is_array($decodedColors)) {
+            foreach ($decodedColors as $color) {
+                if (!empty($color['image'])) {
+                    $color['image_url'] = url('api/productcolor-image/' . basename($color['image']));
+                } else {
+                    $color['image_url'] = null;
+                }
+                $colorImages[] = $color;
+            }
+        }
+    }
+    $product->color_image = $colorImages;
+
+    return response()->json([
+        'success' => true,
+        'data' => $product,
+    ], 200);
+}
 
     /**
  * Delete a product by ID.
