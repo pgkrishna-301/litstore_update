@@ -90,91 +90,94 @@ public function login(Request $request)
         return response()->json(['message' => 'Logout successful']);
     }
 
-    public function getUserProfile(Request $request)
-    {
-        // Fetch all user data
-        $users = DB::table('user')->get(); // Retrieve all users
-    
-        if ($users->isEmpty()) {
-            return response()->json(['message' => 'No users found'], 404);
-        }
-    
-        // Return the list of user details
-        return response()->json($users);
-    }
-    public function getUserById($id)
+ public function getUserProfile(Request $request)
 {
-    // Fetch user by ID
+    $users = DB::table('user')->get();
+
+    if ($users->isEmpty()) {
+        return response()->json(['message' => 'No users found'], 404);
+    }
+
+    // Append full image URL
+    $users = $users->map(function ($user) {
+        $user->profile_image = $user->profile_image 
+            ? asset('storage/' . $user->profile_image) 
+            : null;
+        return $user;
+    });
+
+    return response()->json($users);
+}
+
+public function getUserById($id)
+{
     $user = DB::table('user')->where('id', $id)->first();
 
     if (!$user) {
         return response()->json(['message' => 'User not found'], 404);
     }
 
-    // Return user details
+    // Add full URL to profile image
+    $user->profile_image = $user->profile_image 
+        ? asset('storage/' . $user->profile_image) 
+        : null;
+
     return response()->json([
         'success' => true,
         'data' => $user,
     ], 200);
 }
 
+
     
 
-    public function updateUser(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|integer|exists:user,id', // Ensure the user ID exists
-            'name' => 'nullable|string|max:255',
-            'architect' => 'nullable|string|max:255',
-            'mobile_number' => 'nullable|string|regex:/^[0-9]{10}$/',
-            'email' => 'nullable|string|email|max:255',
-            'password' => 'nullable|string|min:8', // Optional password update
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Optional profile image update
-        ]);
-    
-        // Find the user by ID
-        $user = DB::table('user')->where('id', $request->id)->first();
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'User not found'], 404);
-        }
-    
-        // Handle file upload
-        $profileImagePath = $user->profile_image; // Retain old profile image if not updated
-        if ($request->hasFile('profile_image')) {
-            // Save the new image to the "uploads" directory
-            $uploadedImage = $request->file('profile_image');
-            $profileImagePath = $uploadedImage->move(public_path('uploads'), $uploadedImage->getClientOriginalName());
-    
-            // Convert to a relative path for storage in the database
-            $profileImagePath = 'uploads/' . $uploadedImage->getClientOriginalName();
-        }
-    
-        // Prepare the data for update
-        $updateData = [
-            'name' => $request->name ?? $user->name,
-            'architect' => $request->architect ?? $user->architect,
-            'mobile_number' => $request->mobile_number ?? $user->mobile_number,
-            'email' => $request->email ?? $user->email,
-            'profile_image' => $profileImagePath,
-        ];
-    
-        // Hash and update the password if provided
-        if ($request->password) {
-            $updateData['password'] = Hash::make($request->password);
-        }
-    
-        // Update user in the database
-        DB::table('user')->where('id', $request->id)->update($updateData);
-    
-        // Return the updated user
-        $updatedUser = DB::table('user')->where('id', $request->id)->first();
-    
-        return response()->json([
-            'success' => true,
-            'message' => 'User updated successfully!',
-            'data' => $updatedUser,
-        ], 200);
+   public function updateUser(Request $request)
+{
+    $request->validate([
+        'id' => 'required|integer|exists:user,id',
+        'name' => 'nullable|string|max:255',
+        'architect' => 'nullable|string|max:255',
+        'mobile_number' => 'nullable|string|regex:/^[0-9]{10}$/',
+        'email' => 'nullable|string|email|max:255',
+        'password' => 'nullable|string|min:8',
+        'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
+
+    $user = DB::table('user')->where('id', $request->id)->first();
+    if (!$user) {
+        return response()->json(['success' => false, 'message' => 'User not found'], 404);
     }
+
+    $profileImagePath = $user->profile_image;
+
+    if ($request->hasFile('profile_image')) {
+        $path = $request->file('profile_image')->store('uploads', 'public');
+        $profileImagePath = $path; // This will be 'uploads/filename.jpg'
+    }
+
+    $updateData = [
+        'name' => $request->name ?? $user->name,
+        'architect' => $request->architect ?? $user->architect,
+        'mobile_number' => $request->mobile_number ?? $user->mobile_number,
+        'email' => $request->email ?? $user->email,
+        'profile_image' => $profileImagePath,
+    ];
+
+    if ($request->password) {
+        $updateData['password'] = Hash::make($request->password);
+    }
+
+    DB::table('user')->where('id', $request->id)->update($updateData);
+
+    $updatedUser = DB::table('user')->where('id', $request->id)->first();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'User updated successfully!',
+        'data' => $updatedUser,
+    ], 200);
+}
+
 
     public function updateHide (Request $request, $id)
     {

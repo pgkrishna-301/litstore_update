@@ -19,6 +19,7 @@ class Product extends Model
         'product_description',
         'mrp',
         'discount',
+        'discount_status',
         'offer_price',
         'offer_product',
         'size_name',

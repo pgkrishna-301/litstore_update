@@ -32,17 +32,20 @@ public function store(Request $request)
         'location' => 'nullable|string',
     ]);
 
-    // ✅ Check if this combination already exists for the SAME customer
-    $existing = CartItem::where('product_id', $validated['product_id'] ?? null)
-        ->where('size_name', $validated['size_name'] ?? null)
-        ->where('color_name', $validated['color_name'] ?? null)
-        ->where('customer_id', $validated['customer_id'] ?? null) // ✅ Added this line
-        ->first();
+    // ✅ Skip duplicate check if product_id is null or 0
+    $productId = $validated['product_id'] ?? null;
+    if (!is_null($productId) && $productId != 0) {
+        $existing = CartItem::where('product_id', $productId)
+            ->where('size_name', $validated['size_name'] ?? null)
+            ->where('color_name', $validated['color_name'] ?? null)
+            ->where('customer_id', $validated['customer_id'] ?? null)
+            ->first();
 
-    if ($existing) {
-        return response()->json([
-            'message' => 'This item already exists in this customer\'s cart.'
-        ], 409); // 409 Conflict
+        if ($existing) {
+            return response()->json([
+                'message' => 'This item already exists in this customer\'s cart.'
+            ], 409); // 409 Conflict
+        }
     }
 
     // ✅ Handle banner image

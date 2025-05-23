@@ -198,7 +198,7 @@ Route::delete('/cart-items/customer/delete/{customer_id}',[CartItemController::c
  Route::post('/purchase-items', [PurchaseController::class, 'store']);
  Route::get('/purchase-items/get/{user_id}', [PurchaseController::class, 'index']);
  Route::delete('/purchase-items/{id}', [PurchaseController::class, 'destroy']);
- Route::put('/purchase-items/{id}', [PurchaseController::class, 'update'])->name('cart-items.update');
+ Route::put('/purchase-items/{id}', [PurchaseController::class, 'update'])->name('demo');
 
 
 
@@ -266,6 +266,7 @@ Route::delete('/add-vendors/{id}', [AddVendorController::class, 'destroy']);
 Route::post('/add-size', [SizeController::class, 'store']);
 Route::put('/update-size/{id}', [SizeController::class, 'update']);
 Route::get('/size/{id}', [SizeController::class, 'show']);
+
 
 
 

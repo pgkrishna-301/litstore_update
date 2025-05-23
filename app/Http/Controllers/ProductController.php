@@ -46,6 +46,7 @@ class ProductController extends Controller
             'net_quantity' => 'nullable|integer',
             'colour_temperature' => 'nullable|string',
             'about_items' => 'nullable|string',
+            'discount_status' => 'nullable|integer',
         ]);
     
         // Banner image
